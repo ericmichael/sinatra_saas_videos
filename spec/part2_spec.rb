@@ -22,8 +22,8 @@ describe "My application" do
   end
 
   it "should not be signed in by default" do
-    get '/'
-    expect(session["user_id"]).to be_nil
+    visit '/'
+    expect{ page.get_rack_session_key('user_id')}.to raise_error(KeyError)
   end
 
   it "should allow signing up for accounts" do

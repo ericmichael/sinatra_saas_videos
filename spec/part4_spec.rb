@@ -1,9 +1,19 @@
 # spec/app_spec.rb
 require File.expand_path '../spec_helper.rb', __FILE__
 
+
 describe "My application" do
 
   before(:all) do
+Capybara.register_driver :poltergeist_test do |app|
+  options = {
+    phantomjs_options: ['--ssl-protocol=any', '--ignore-ssl-errors=yes'],
+    inspector: false
+  }
+  Capybara::Poltergeist::Driver.new(app, options)
+end
+
+  		Capybara.current_driver = :poltergeist_test
   	    @u = User.new
 	    @u.email = "user@user.com"
 	    @u.password = "user"
@@ -44,32 +54,51 @@ describe "My application" do
 	    v.save
   end
 
+
   it "should allow requests to /pay by users who are not admins or pro" do
   	page.set_rack_session(user_id: @u.id)
   	visit '/pay'
+  	expect(page.status_code).to eq(200)
     expect(page).to have_current_path("/pay")
   end
 
   it "should not allow requests to /pay for non-signed in users" do
   	page.set_rack_session(user_id: nil)
   	visit '/pay'
+  	expect(page.status_code).to eq(200)
     expect(page).not_to have_current_path("/pay")
   end
 
   it "should not allow requests to /pay for admins" do
   	page.set_rack_session(user_id: @admin.id)
   	visit '/pay'
+  	expect(page.status_code).to eq(200)
     expect(page).not_to have_current_path("/pay")
   end
 
-  it "should allow free user to upgrade to pro by paying money" do
+  it "should allow free user to upgrade to pro by paying money", js: true do
   	page.set_rack_session(user_id: @u.id)
+  	puts Capybara.current_driver
+  	Capybara.default_max_wait_time = 10
   	visit '/pay'
-  	#fill in form
-  	#submit
-  	#should be pro in db
-  	u = User.get(@u.id)
-  	expect(u.pro).to eq(true)
+  	sleep(5)
+  	click_button 'Pay with Card'
+    expect(page).to have_css('iframe[name="stripe_checkout_app"]')
+	stripe_iframe = all('iframe[name=stripe_checkout_app]').last
+
+      Capybara.within_frame stripe_iframe do
+        # Set values by placeholders
+        fill_in 'Email', with: "customer@example.com"
+        fill_in 'Card number', with: '4242424242424242'
+        fill_in 'MM / YY', with: '0829'
+        fill_in 'CVC', with: '123'
+        # You might need to fill more fields...
+
+        click_button 'Pay $5.00'
+      end
+    sleep(30)
+
+    expect(page.body).to include('Thanks')
   end
 
 end
