@@ -60,31 +60,31 @@ end
   end
 
 
-  it "should allow requests to /pay by users who are not admins or pro" do
+  it "should allow requests to /upgrade by users who are not admins or pro" do
   	page.set_rack_session(user_id: @u.id)
-  	visit '/pay'
+  	visit '/upgrade'
   	expect(page.status_code).to eq(200)
-    expect(page).to have_current_path("/pay")
+    expect(page).to have_current_path("/upgrade")
   end
 
-  it "should not allow requests to /pay for non-signed in users" do
+  it "should not allow requests to /upgrade for non-signed in users" do
   	page.set_rack_session(user_id: nil)
-  	visit '/pay'
+  	visit '/upgrade'
   	expect(page.status_code).to eq(200)
-    expect(page).not_to have_current_path("/pay")
+    expect(page).not_to have_current_path("/upgrade")
   end
 
-  it "should not allow requests to /pay for admins" do
+  it "should not allow requests to /upgrade for admins" do
   	page.set_rack_session(user_id: @admin.id)
-  	visit '/pay'
+  	visit '/upgrade'
   	expect(page.status_code).to eq(200)
-    expect(page).not_to have_current_path("/pay")
+    expect(page).not_to have_current_path("/upgrade")
   end
 
   it "should allow free user to upgrade to pro by paying money", js: true do
   	page.set_rack_session(user_id: @u.id)
   	Capybara.default_max_wait_time = 10
-  	visit '/pay'
+  	visit '/upgrade'
   	sleep(5)
   	click_button 'Pay with Card'
     expect(page).to have_css('iframe[name="stripe_checkout_app"]')
@@ -108,7 +108,7 @@ end
   it "should allow not all free user to upgrade to pro by paying money with invalid card", js: true do
     page.set_rack_session(user_id: @u2.id)
     Capybara.default_max_wait_time = 10
-    visit '/pay'
+    visit '/upgrade'
     sleep(5)
     click_button 'Pay with Card'
     expect(page).to have_css('iframe[name="stripe_checkout_app"]')

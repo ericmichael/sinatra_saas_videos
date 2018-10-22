@@ -77,7 +77,7 @@ On POST requests to /videos/create you should accept the following parameters: t
 
 On GET requests to /videos/new you should show a form that helps the user submit a POST request to /videos/create. The form should have some type of input tag for: title, description, video_url, and pro.
 
-**HINT: ** Here's just one way to do it. Make the input tag for the *pro* parameter a checkbox. `<input type="checkbox" name="pro">` If the box is checked it will set `params["pro"]="on"`, if not check the `params` hash with not have a key `"pro"`.
+**HINT: ** Here's just one way to do it. Make the input tag for the *pro* parameter a checkbox. `<input type="checkbox" name="pro">` If the box is checked it will set `params["pro"]="on"`, if not checked the `params` hash with not have a key `"pro"`.
 
 
 
@@ -130,6 +130,8 @@ Make an account on Stripe.com and follow use this as a reference guide: https://
 * You need PhantomJS for the poltergeist gem (to properly test Stripe)
 
 * Run: `bundle exec rspec spec/part4_spec.rb`
+
+* Note: These tests take about 1 minute to run
 
   ​
 
