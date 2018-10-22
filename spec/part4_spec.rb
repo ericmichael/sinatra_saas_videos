@@ -14,10 +14,15 @@ Capybara.register_driver :poltergeist_test do |app|
 end
 
   		Capybara.current_driver = :poltergeist_test
-  	    @u = User.new
+  	  @u = User.new
 	    @u.email = "user@user.com"
 	    @u.password = "user"
 	    @u.save
+
+      @u2 = User.new
+      @u2.email = "user2@user2.com"
+      @u2.password = "user2"
+      @u2.save
 
 	    @admin = User.new
 	    @admin.email = "administrator@administrator.com"
@@ -78,13 +83,12 @@ end
 
   it "should allow free user to upgrade to pro by paying money", js: true do
   	page.set_rack_session(user_id: @u.id)
-  	puts Capybara.current_driver
   	Capybara.default_max_wait_time = 10
   	visit '/pay'
   	sleep(5)
   	click_button 'Pay with Card'
     expect(page).to have_css('iframe[name="stripe_checkout_app"]')
-	stripe_iframe = all('iframe[name=stripe_checkout_app]').last
+	  stripe_iframe = all('iframe[name=stripe_checkout_app]').last
 
       Capybara.within_frame stripe_iframe do
         # Set values by placeholders
@@ -97,8 +101,32 @@ end
         click_button 'Pay $5.00'
       end
     sleep(30)
+    u = User.get(@u.id)
+    expect(u.pro).to eq(true)
+  end
 
-    expect(page.body).to include('Thanks')
+  it "should allow not all free user to upgrade to pro by paying money with invalid card", js: true do
+    page.set_rack_session(user_id: @u2.id)
+    Capybara.default_max_wait_time = 10
+    visit '/pay'
+    sleep(5)
+    click_button 'Pay with Card'
+    expect(page).to have_css('iframe[name="stripe_checkout_app"]')
+    stripe_iframe = all('iframe[name=stripe_checkout_app]').last
+
+      Capybara.within_frame stripe_iframe do
+        # Set values by placeholders
+        fill_in 'Email', with: "customer@example.com"
+        fill_in 'Card number', with: '4242424242424243'
+        fill_in 'MM / YY', with: '0829'
+        fill_in 'CVC', with: '123'
+        # You might need to fill more fields...
+
+        click_button 'Pay $5.00'
+      end
+    sleep(30)
+    u = User.get(@u2.id)
+    expect(u.pro).to eq(false)
   end
 
 end

@@ -1,6 +1,7 @@
 # spec/app_spec.rb
 require File.expand_path '../spec_helper.rb', __FILE__
 
+
 describe "When User, my application" do
 
   before(:all) do
@@ -146,5 +147,19 @@ describe "When Admin, my application" do
     pro_videos.each do |v|
       expect(page.body).to include(v.title)
     end
+  end
+end
+
+describe "When not signed in, my application" do
+  it "should not allow requests to /videos (should redirect to '/login')" do
+    page.set_rack_session(user_id: nil)
+    visit '/videos'
+    expect(page).to have_current_path("/login")
+  end
+
+  it "should not allow requests to /videos/new (should redirect to '/login')" do
+    page.set_rack_session(user_id: nil)
+    visit '/videos/new'
+    expect(page).to have_current_path("/login").or have_current_path("/")
   end
 end

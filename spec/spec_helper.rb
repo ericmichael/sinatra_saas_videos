@@ -27,7 +27,7 @@ RSpec.configure do |c|
   c.include Capybara::DSL
 	c.include(DataMapper::Matchers)
 
-	DataMapper::setup(:default, "sqlite3://#{Dir.pwd}/app.db")
+	DataMapper::setup(:default, "sqlite3://#{Dir.pwd}/app_test.db")
   DataMapper.finalize
   User.auto_migrate!
   Video.auto_migrate!
