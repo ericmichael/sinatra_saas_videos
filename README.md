@@ -61,7 +61,9 @@ Edit your ~/.bash_profile and use the following example for what to add:
 
 * Note: These tests take about 1 minute to run
 
-## Part 2 - Check your own account
+## Part 2 - Add "My Account" Lookup
+
+You should probably [read the API docs](https://documenter.getpostman.com/view/7032600/SVYkvM7n?version=latest).
 
 The goal here is to add a Sinatra route that listens on GET requests to `/my_account` and returns JSON corresponding to the user account whose token was passed in.
 
@@ -70,11 +72,15 @@ Run tests with: `bundle exec rspec spec/part2_spec.rb`
 
 ## Part 3 - Make Basic Endpoints for Videos
 
+You should probably [read the API docs](https://documenter.getpostman.com/view/7032600/SVYkvM7n?version=latest).
+
 The goal here is to make the basic CRUD endpoints for videos.
 
 Run tests with: `bundle exec rspec spec/part3_spec.rb`
 
 ## Part 4 - Hide information from Unpaid Customers
+
+You should probably [read the API docs](https://documenter.getpostman.com/view/7032600/SVYkvM7n?version=latest).
 
 The goal here is to make sure that unpaid customers don't see the PRO videos.
 
