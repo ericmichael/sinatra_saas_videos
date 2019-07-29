@@ -20,7 +20,6 @@ namespace '/api' do
 	# Make sure they are signed in
 	# Gives back current user's account information as JSON
 	# EXCLUDE their password from the JSON
-	# Hint: current_user.to_json(exclude: [:password])
 	get "/my_account" do
 		placeholder
 	end
@@ -30,7 +29,6 @@ namespace '/api' do
 	# video in database
 	# EXCLUDE: video_url
 	# INCLUDE: result of thumbnail method
-	# Hint: something.to_json(exclude: [:video_url], methods: [:thumbnail])
 	get "/videos" do
 		placeholder
 	end

@@ -30,6 +30,7 @@ Make an online video API where people must sign-in to view the videos on the pla
 
 Run tests with: `bundle exec rspec spec/part0_spec.rb`
 
+
 ## Part 1 - Check if your Stripe account is configured correctly
 
 * Get a Stripe account and find your TEST API KEYS.
@@ -88,6 +89,48 @@ Make sure paid customers can see FREE and PRO videos.
 
 Run tests with: `bundle exec rspec spec/part4_spec.rb`
 
+## Hint 1 - Hiding properties from JSON and adding new info to JSON
+
+Ok, so you ran into some trouble. How do you exclude information from `to_json` AND how do you include information?
+
+Suppose you had the following Ruby class:
+
+```ruby
+class User
+    include DataMapper::Resource
+    property :id, Serial
+    property :first_name, Text
+    property :last_name, Text
+
+    def full_name
+        return first_name + " " + last_name
+    end
+end
+```
+
+Let's say you had to make an API to display a user's information but you wanted the JSON to have their full name instead of their first and last name.
+
+Here is how you would do it.
+
+```ruby
+get "/api/users/:id" do
+    u = User.get(params["id"])
+    if !u.nil
+        halt 200, u.to_json(exclude: [:first_name, :last_name], methods: [:full_name])
+    else
+        halt 404, {message: "User not found"}.to_json
+    end
+end
+```
+
+## Hint 2 - Use 200, 201, 404, and 422 when it makes sense
+
+* If you are looking up an object by ID and it doesn't exist then halt 404
+* If you just created something then halt 201
+* If someone asks you to make something and doesn't hand you all the required params, halt 422
+* If someone is not an administrator but they are trying to create, update, or delete  then halt 401
+* If someone is unpaid and they are requesting the details of a paid video then halt 401
+* If everything is gravy, then halt 200
 
 ## Submitting
 
