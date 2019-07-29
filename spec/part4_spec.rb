@@ -1,132 +1,209 @@
 # spec/app_spec.rb
 require File.expand_path '../spec_helper.rb', __FILE__
+require 'jwt'
 
-
-describe "My application" do
-
-  before(:all) do
-Capybara.register_driver :poltergeist_test do |app|
-  options = {
-    phantomjs_options: ['--ssl-protocol=any', '--ignore-ssl-errors=yes'],
-    inspector: false
-  }
-  Capybara::Poltergeist::Driver.new(app, options)
+def has_status_200
+	expect(last_response.status).to eq(200)
 end
 
-  		Capybara.current_driver = :poltergeist_test
-  	  @u = User.new
-	    @u.email = "user@user.com"
-	    @u.password = "user"
-	    @u.save
+def has_status_201
+	expect(last_response.status).to eq(201)
+end
 
-      @u2 = User.new
-      @u2.email = "user2@user2.com"
-      @u2.password = "user2"
-      @u2.save
+def has_status_404
+	expect(last_response.status).to eq(404)
+end
 
-	    @admin = User.new
-	    @admin.email = "administrator@administrator.com"
-	    @admin.password = "admin"
-	    @admin.administrator = true
-	    @admin.save
+def has_status_unauthorized
+	expect(last_response.status).to eq(401)
+end
 
-	    #make free videos
-	    v=Video.new
-	    v.title="Video1"
-	    v.description="Description1"
-	    v.video_url="https://www.youtube.com/watch?v=WwTpPd_efdM"
-	    v.save
+def has_status_unprocessable
+	expect(last_response.status).to eq(422)
+end
 
-	    v=Video.new
-	    v.title="Video2"
-	    v.description="Description2"
-	    v.video_url="https://www.youtube.com/watch?v=WwTpPd_efdM"
-	    v.save
+def has_status_created
+	expect(last_response.status).to eq(201)
+end
 
-	    #make pro videos
-	    v=Video.new
-	    v.title="Video3"
-	    v.description="Description3"
-	    v.video_url="https://www.youtube.com/watch?v=WwTpPd_efdM"
-	    v.pro = true
-	    v.save
+def is_valid_token?(encoded_token)
+	begin
+	JWT.decode encoded_token, "lasjdflajsdlfkjasldkfjalksdjflk", true, { algorithm: 'HS256' }
+	return true
+	rescue
+	return false
+	end
+end
 
-	    v=Video.new
-	    v.title="Video4"
-	    v.description="Description4"
-	    v.video_url="https://www.youtube.com/watch?v=WwTpPd_efdM"
-	    v.pro = true
-	    v.save
+def get_user_id_from_token(encoded_token)
+	begin
+	decoded = JWT.decode encoded_token, "lasjdflajsdlfkjasldkfjalksdjflk", true, { algorithm: 'HS256' }
+	return decoded[0]["user_id"]
+	rescue
+	return nil
+	end
+end
+
+def contains_protected_video_attributes(hash)
+	expect(hash.key? "id").to eq(true)
+	expect(hash.key? "title").to eq(true)
+	expect(hash.key? "video_url").to eq(false)
+	expect(hash.key? "pro").to eq(true)
+	expect(hash.key? "created_at").to eq(true)
+	expect(hash.key? "thumbnail").to eq(true)
+end
+
+def protected_json_hash_matches_object?(hash, video_obj)
+	contains_protected_video_attributes(hash)
+	expect(hash["id"]).to eq(video_obj.id)
+	expect(hash["title"]).to eq(video_obj.title)
+	expect(hash["pro"]).to eq(video_obj.pro)
+	expect(hash["thumbnail"]).to eq(video_obj.thumbnail)
+end
+
+
+def contains_video_attributes(hash)
+	expect(hash.key? "id").to eq(true)
+	expect(hash.key? "title").to eq(true)
+	expect(hash.key? "video_url").to eq(true)
+	expect(hash.key? "pro").to eq(true)
+	expect(hash.key? "created_at").to eq(true)
+	expect(hash.key? "embed_code").to eq(true)
+	expect(hash.key? "thumbnail").to eq(true)
+end
+
+def json_hash_matches_object?(hash, video_obj)
+	contains_video_attributes(hash)
+	expect(hash["id"]).to eq(video_obj.id)
+	expect(hash["title"]).to eq(video_obj.title)
+	expect(hash["video_url"]).to eq(video_obj.video_url)
+	expect(hash["pro"]).to eq(video_obj.pro)
+	expect(hash["embed_code"]).to eq(video_obj.embed_code)
+	expect(hash["thumbnail"]).to eq(video_obj.thumbnail)
+end
+
+describe "With FREE user token, API" do
+  before(:all) do 
+  	@u = User.new
+  	@u.email = "p1@p1.com"
+  	@u.password = "p1"
+  	@u.save
+
+  	@u2 = User.new
+  	@u2.email = "p2@p2.com"
+    @u2.password = "p2"
+    @u2.role_id = 1
+	@u2.save
+	  
+	@p = Video.new
+  	@p.title = "Sample video"
+  	@p.video_url = "https://via.placeholder.com/1080.jpg"
+  	@p.save
+
+  	@p = Video.new
+  	@p.title = "Sample video"
+    @p.video_url = "https://via.placeholder.com/1080.jpg"
+    @p.pro = true
+    @p.save
+      
+    get "/api/login?username=p1@p1.com&password=p1"
+    has_status_200	
+    @token = JSON.parse(last_response.body)["token"]
+    header "AUTHORIZATION", "bearer #{@token}"
+    @u = User.first(email: "p1@p1.com")
+  end
+
+  it "should have two users in test database" do 
+  	expect(User.all.count).to eq(2)
   end
 
 
-  it "should allow requests to /upgrade by users who are not admins or pro" do
-  	page.set_rack_session(user_id: @u.id)
-  	visit '/upgrade'
-  	expect(page.status_code).to eq(200)
-    expect(page).to have_current_path("/upgrade")
+  it "should not allow reading a PRO video" do
+  	get "/api/videos/#{@p.id}"
+  	has_status_unauthorized
   end
+	
+  it "should not allow reading PRO videos" do
+    @p = Video.all(pro: true).last
+    get "/api/videos/#{@p.id}"
+    has_status_unauthorized
+end
 
-  it "should not allow requests to /upgrade for non-signed in users" do
-  	page.set_rack_session(user_id: nil)
-  	visit '/upgrade'
-  	expect(page.status_code).to eq(200)
-    expect(page).not_to have_current_path("/upgrade")
+it "should include all videos on /api/videos" do
+    get "/api/videos"
+    json_response = last_response.body
+    videos = JSON.parse(json_response)
+
+    video_ids = []
+
+    videos.each do |p|
+      video_ids << p["id"]
+      video_obj = Video.get(p["id"])
+      contains_protected_video_attributes(p)
+      protected_json_hash_matches_object?(p, video_obj)
+    end
+
+    master_videos = Video.all
+    master_video_ids = []
+
+    master_videos.each do |p|
+      master_video_ids << p.id
+    end
+
+    expect((video_ids - master_video_ids).empty?).to eq(true)
   end
+	
 
-  it "should not allow requests to /upgrade for admins" do
-  	page.set_rack_session(user_id: @admin.id)
-  	visit '/upgrade'
-  	expect(page.status_code).to eq(200)
-    expect(page).not_to have_current_path("/upgrade")
-  end
+end
 
-  it "should allow free user to upgrade to pro by paying money", js: true do
-  	page.set_rack_session(user_id: @u.id)
-  	Capybara.default_max_wait_time = 10
-  	visit '/upgrade'
-  	sleep(5)
-  	click_button 'Pay with Card'
-    expect(page).to have_css('iframe[name="stripe_checkout_app"]')
-	  stripe_iframe = all('iframe[name=stripe_checkout_app]').last
+describe "With valid PRO token, API" do
+	before(:all) do
+		get "/api/login?username=p2@p2.com&password=p2"
+	  	has_status_200	
+	  	@token = JSON.parse(last_response.body)["token"]
+		  header "AUTHORIZATION", "bearer #{@token}"
+		  @u = User.first(email: "p2@p2.com")
+	end
 
-      Capybara.within_frame stripe_iframe do
-        # Set values by placeholders
-        fill_in 'Email', with: "customer@example.com"
-        fill_in 'Card number', with: '4242424242424242'
-        fill_in 'MM / YY', with: '0829'
-        fill_in 'CVC', with: '123'
-        # You might need to fill more fields...
-
-        click_button 'Pay $5.00'
-      end
-    sleep(30)
-    u = User.get(@u.id)
-    expect(u.pro).to eq(true)
-  end
-
-  it "should allow not all free user to upgrade to pro by paying money with invalid card", js: true do
-    page.set_rack_session(user_id: @u2.id)
-    Capybara.default_max_wait_time = 10
-    visit '/upgrade'
-    sleep(5)
-    click_button 'Pay with Card'
-    expect(page).to have_css('iframe[name="stripe_checkout_app"]')
-    stripe_iframe = all('iframe[name=stripe_checkout_app]').last
-
-      Capybara.within_frame stripe_iframe do
-        # Set values by placeholders
-        fill_in 'Email', with: "customer@example.com"
-        fill_in 'Card number', with: '4242424242424243'
-        fill_in 'MM / YY', with: '0829'
-        fill_in 'CVC', with: '123'
-        # You might need to fill more fields...
-
-        click_button 'Pay $5.00'
-      end
-    sleep(30)
-    u = User.get(@u2.id)
-    expect(u.pro).to eq(false)
-  end
-
+	it "should allow accessing all videos" do
+		get "/api/videos"
+		#puts last_response.status
+		# Rspec 2.x
+		has_status_200
+	  end
+	
+	  it "should include all FREE and PRO videos on /api/videos" do
+		get "/api/videos"
+		json_response = last_response.body
+		videos = JSON.parse(json_response)
+	
+		video_ids = []
+	
+		videos.each do |p|
+		  video_ids << p["id"]
+		  video_obj = Video.get(p["id"])
+		  contains_protected_video_attributes(p)
+		  protected_json_hash_matches_object?(p, video_obj)
+		end
+	
+		master_videos = Video.all
+		master_video_ids = []
+	
+		master_videos.each do |p|
+		  master_video_ids << p.id
+		end
+	
+		expect((video_ids - master_video_ids).empty?).to eq(true)
+	  end
+	
+      it "should allow reading a PRO video" do
+        @p = Video.all(pro: true).last
+		get "/api/videos/#{@p.id}"
+		video_json = last_response.body
+		video_hash = JSON.parse(video_json)
+	
+		has_status_200
+		json_hash_matches_object?(video_hash, @p)
+	  end
+	
 end

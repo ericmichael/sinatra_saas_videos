@@ -1,0 +1,25 @@
+<div class="container">
+        <div class="card-deck">
+            <% @videos.each_with_index do |v,i| %>
+                <% if i % 3 == 0 %>
+                    </div>
+                    <div class="card-deck" style="margin-top:10px">
+                <% end %>
+                <div class="card">
+                    <img class="card-img-top" src="<%= v.thumbnail %>" alt="Card image cap">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <% if v.pro %>
+                                <span class="badge badge-primary">Pro</span>
+                            <% end %>
+                            <%= v.title %>
+                        </h5>
+                        <p class="card-text"><%= v.description.truncate(200) %></p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="/videos/<%= v.id %>" class="btn btn-danger float-right">Watch Now</a>
+                    </div>
+                </div>
+            <% end %>
+        </div>
+</div>

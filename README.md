@@ -1,12 +1,14 @@
 ## Introduction
 
-The goal in this assignment is to learn how to make a modern Software as a Service (SaaS) product. The goal is walk the student through the process of incrementally developing each feature and ending with billing. Students will learn how to make simple application features protected by authentication (signing in) and authorization (only seeing what you're allowed to). Students will then use Stripe to allow customers to make purchases and have those purchases trigger application code. This HW will be based on the idea of making a commercial online video platform. Similar examples include: Netflix, Hulu, Art of Jiu-Jitsu Online, Yoga for BJJ, Udemy, and more.
+The goal in this assignment is to learn how to make a modern Software as a Service (SaaS) product. The goal is walk the student through the process of incrementally developing each feature. Students will learn how to make simple application features protected by authentication (signing in) and authorization (only seeing what you're allowed to). 
+
+App is preconfigured with Stripe to allow customers to make purchases and have those purchases trigger application code. This HW will be based on the idea of making a commercial online video platform. Similar examples include: Netflix, Hulu, Art of Jiu-Jitsu Online, Yoga for BJJ, Udemy, and more.
 
 
 
 ## The Task
 
-Make an online video platform where people must sign-in to view the videos on the platform. Users who are *pro* users are allowed to view *pro* videos. Users become *pro* by paying money to upgrade their membership. Admins are allowed to see all the videos. Admins are also allowed to add new videos to the platform.
+Make an online video API where people must sign-in to view the videos on the platform. Users who are *pro* users are allowed to view *pro* videos. Users become *pro* by paying money to upgrade their membership. Admins are allowed to see all the videos. Admins are also allowed to add, update, and delete videos.
 
 
 
@@ -24,10 +26,11 @@ Make an online video platform where people must sign-in to view the videos on th
 
 
 
-## Part 1 - Model the Data Correctly
+## Part 0 and 1 - Model the Data Correctly
 
 For part 1 your job is to add to the Video and User classes such that they have all the properties we need.
 
+Run tests with: `bundle exec rspec spec/part0_spec.rb`
 Run tests with: `bundle exec rspec spec/part1_spec.rb`
 
 #### Video
@@ -50,86 +53,47 @@ Run tests with: `bundle exec rspec spec/part1_spec.rb`
 * should have property **email**, for ex: eric@eric.com
 * should have property **password**, for ex: eric123
 * should have property **pro**, which defaults to false, signifies whether the user has paid for upgraded privileges. for ex: *false*
-* should have boolean property **administrator**, which defaults to *false*, signifies whether a user is in administrator or not
+* should have an integer property **role_id**, which defaults to *0*, and signifieds whether the user is a free user, pro user, or admin.
 
 
+## Part 2 - Check your own account
 
-
-## Part 2 - Make Basic User Interface for Videos
-
-The goal here is to make a basic User Interface for viewing and adding Video objects to the database.
+The goal here is to add a Sinatra route that listens on GET requests to `/my_account` and returns JSON corresponding to the user account whose token was passed in.
 
 Run tests with: `bundle exec rspec spec/part2_spec.rb`
 
-#### GET /videos
 
-On GET requests to /videos you should output every FREE video in the database. Output the title, description, and embed the video.
+## Part 3 - Make Basic Endpoints for Videos
 
-
-
-#### POST /videos/create
-
-On POST requests to /videos/create you should accept the following parameters: title, description, video_url, pro. **<u>Only title, description, and video_url are required.</u>** <u>*The pro parameter is optional.*</u> When handed those things, you should make and save a new Video object with that information.
-
-
-
-#### GET /videos/new
-
-On GET requests to /videos/new you should show a form that helps the user submit a POST request to /videos/create. The form should have some type of input tag for: title, description, video_url, and pro.
-
-**HINT: ** Here's just one way to do it. Make the input tag for the *pro* parameter a checkbox. `<input type="checkbox" name="pro">` If the box is checked it will set `params["pro"]="on"`, if not checked the `params` hash with not have a key `"pro"`.
-
-
-
-#### In short
-
-* should allow GET requests to /videos/new
-* should allow POST requests to /videos/create
-* should allow creation of FREE videos
-* should allow creation of PRO videos
-* should display all FREE videos on GET /videos
-
-
-
-## Part 3
-
-Add proper authentication and authorization checks for routes.
-
-Use `authenticate!` to protect routes from not signed in users. Write your own function to protect against non-admin users. 
+The goal here is to make the basic CRUD endpoints for videos.
 
 Run tests with: `bundle exec rspec spec/part3_spec.rb`
 
-* Protect /videos from not signed-in users
-* Protect /videos/new from anyone who is not an admin
-* Protect /videos/create from anyone who is not an admin
-* Non-Pro and Non-Admin users should only see free videos on /videos
-* Admin users should see all videos on /videos
-* Pro users should see all videos on /videos
+## Part 4 - Hide information from Unpaid Customers
+
+The goal here is to make sure that unpaid customers don't see the PRO videos.
+
+Make sure paid customers can see FREE and PRO videos.
+
+Run tests with: `bundle exec rspec spec/part4_spec.rb`
+
+## Part 5, 6, 7 - Done for you! Yayyy!
+
+Parts 5, 6, and 7 check the web UI functionality and makes sure it is running correctly.
+
+Run tests with: `bundle exec rspec spec/part5_spec.rb`
+Run tests with: `bundle exec rspec spec/part6_spec.rb`
+Run tests with: `bundle exec rspec spec/part7_spec.rb`
 
 
 
-## Part 4 - Adding Billing
-
-Make an account on Stripe.com and follow use this as a reference guide: https://stripe.com/docs/checkout/sinatra
-
-
-
-* Make a GET /upgrade route which displays a Stripe payment form to signed-in users who are not admins and are not pro
-* Make successful charges go to POST /charge
-  * In here, upgrade the current signed-in user to pro
-  * Charge the card
-  * Display the user a success message
-* For testing Stripe Checkout, use "customer@example.com" for  email, "4242 4242 4242 4242" as Card Number, any future date as expiration, and any CVC.
-
-
-
-#### Running Part 4 tests:
+#### Running Part 7 tests:
 
 * Install PhantomJS via instructions here: https://github.com/teampoltergeist/poltergeist
 
 * You need PhantomJS for the poltergeist gem (to properly test Stripe)
 
-* Run: `bundle exec rspec spec/part4_spec.rb`
+* Run: `bundle exec rspec spec/part7_spec.rb`
 
 * Note: These tests take about 1 minute to run
 

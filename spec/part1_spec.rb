@@ -7,11 +7,3 @@ describe Video do
   it { should have_property           :video_url  }
   it { should have_property           :pro }
 end
-
-describe User do
-  it { should have_property           :id }
-  it { should have_property           :email }
-  it { should have_property           :password }
-  it { should have_property           :pro }
-  it { should have_property           :administrator }
-end

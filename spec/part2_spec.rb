@@ -1,146 +1,112 @@
 # spec/app_spec.rb
 require File.expand_path '../spec_helper.rb', __FILE__
+require 'jwt'
 
-describe "My application" do
+def has_status_200
+	expect(last_response.status).to eq(200)
+end
+
+def has_status_404
+	expect(last_response.status).to eq(404)
+end
+
+def has_status_unauthorized
+	expect(last_response.status).to eq(401)
+end
+
+def has_status_unprocessable
+	expect(last_response.status).to eq(422)
+end
+
+def has_status_created
+	expect(last_response.status).to eq(201)
+end
+
+def valid_json?(json)
+    JSON.parse(json)
+    return true
+  rescue JSON::ParserError => e
+    return false
+end
+
+def is_valid_token?(encoded_token)
+	begin
+	JWT.decode encoded_token, "lasjdflajsdlfkjasldkfjalksdjflk", true, { algorithm: 'HS256' }
+	return true
+	rescue
+	return false
+	end
+end
+
+def get_user_id_from_token(encoded_token)
+	begin
+	decoded = JWT.decode encoded_token, "lasjdflajsdlfkjasldkfjalksdjflk", true, { algorithm: 'HS256' }
+	return decoded[0]["user_id"]
+	rescue
+	return nil
+	end
+end
+
+describe "When not signed in, API" do
   before(:all) do 
-    @u = User.new
-    @u.email = "abc@abc.com"
-    @u.password = "abc"
-    @u.save
+  	@u = User.new
+  	@u.email = "p1@p1.com"
+  	@u.password = "p1"
+  	@u.save
 
-    @admin = User.new
-    @admin.email = "administrator@administrator.com"
-    @admin.password = "administrator"
-    @admin.administrator = true
-    @admin.save
+  	@u2 = User.new
+  	@u2.email = "p2@p2.com"
+  	@u2.password = "p2"
+  	@u2.save
+
+  	@p = Video.new
+  	@p.title = "Sample post"
+    @p.video_url = "https://via.placeholder.com/1080.jpg"
+    @p.pro = false
+  	@p.save
   end
 
-  it "should allow accessing the home page" do
-    get '/'
-    # Rspec 2.x
-    expect(last_response).to be_ok
+  it "should have two users in test database" do 
+  	expect(User.all.count).to eq(2)
   end
 
-  it "should not be signed in by default" do
-    visit '/'
-    expect{ page.get_rack_session_key('user_id')}.to raise_error(KeyError)
+#   get “/my_account”
+#   Response Status: 2xx OK
+#   Response Body: JSON representing the user that is currently logged in
+#   Status: 404 if user not found
+
+  it "should not allow access to GET /my_account" do
+	get "/api/my_account"
+	has_status_unauthorized
+  end
+  
+end
+
+describe "With valid token, API" do
+	before(:all) do
+		get "/api/login?username=p1@p1.com&password=p1"
+	  	has_status_200	
+	  	@token = JSON.parse(last_response.body)["token"]
+		header "AUTHORIZATION", "bearer #{@token}"
+		@u = User.first(email: "p1@p1.com")
   end
 
-  it "should allow signing up for accounts" do
-    visit '/sign_up'
-    fill_in 'email', with: "test@test.com"
-    fill_in 'password', with: "test"
+#   get “/my_account”
+#   Response Status: 2xx OK
+#   Response Body: JSON representing the user that is currently logged in
+#   Status: 404 if user not found
+    it "should give JSON representing the currently logged in user on GET /my_account" do
+			get "/api/my_account"
+			expect(valid_json?(last_response.body))
+			ujson = JSON.parse(last_response.body)
+			expect(ujson.has_key?("id")).to eq(true)
+			expect(ujson.has_key?("email")).to eq(true)
+			expect(ujson.has_key?("password")).to eq(false)
+            expect(ujson.has_key?("created_at")).to eq(true)
+			expect(ujson.has_key?("role_id")).to eq(true)
 
-    form = page.find("form")
-    class << form
-      def submit!
-        Capybara::RackTest::Form.new(driver, native).submit({})
-      end
+			expect(ujson["id"]).to eq(@u.id)
+            expect(ujson["email"]).to eq(@u.email)
+            expect(ujson["role_id"]).to eq(@u.role_id)
     end
-    form.submit!
-    u = User.last
-    expect(u).not_to be_nil
-    expect(u.email).to eq("test@test.com")
-    expect(u.password).to eq("test")
-    expect(u.administrator).to eq(false)
-  end
-
-  it "should allow logging in" do
-    visit '/login'
-    fill_in 'email', with: "abc@abc.com"
-    fill_in 'password', with: "abc"
-
-    form = page.find("form")
-    class << form
-      def submit!
-        Capybara::RackTest::Form.new(driver, native).submit({})
-      end
-    end
-    form.submit!
-    expect(page.get_rack_session_key('user_id')).to eq(@u.id)
-  end
-
-  it "should allow signing out" do
-    visit '/'
-    page.set_rack_session(user_id: @u.id)
-    expect(page.get_rack_session_key('user_id')).to eq(@u.id)
-    visit '/logout'
-    expect{ page.get_rack_session_key('user_id')}.to raise_error(KeyError)
-  end
-
-  it "should allow requests to /videos/new" do
-    page.set_rack_session(user_id: @admin.id)
-    visit '/videos/new'
-    # Rspec 2.x
-    expect(page).to have_current_path("/videos/new")
-  end
-
-  it "should allow POST requests to /videos/create" do
-    page.set_rack_session(user_id: @admin.id)
-    page.driver.browser.post('/videos/create')
-
-    expect(page.status_code).to eq(200)
-    expect(page).to have_current_path("/videos/create")
-  end
-
-  it "should allow creation of PRO videos" do
-    page.set_rack_session(user_id: @admin.id)
-    visit '/videos/new'
-    fill_in 'title', with: "TestTitle"
-    fill_in 'description', with: "TestDescription"
-    fill_in 'video_url', with: "https://www.youtube.com/watch?v=WwTpPd_efdM"
-    check 'pro'
-
-    form = page.find("form")
-    class << form
-      def submit!
-        Capybara::RackTest::Form.new(driver, native).submit({})
-      end
-    end
-    form.submit!
-
-    v = Video.last
-    expect(v.title).to eq("TestTitle")
-    expect(v.description).to eq("TestDescription")
-    expect(v.video_url).to eq("https://www.youtube.com/watch?v=WwTpPd_efdM")
-    expect(v.pro).to eq(true)
-  end
-
-  it "should allow creation of FREE videos" do
-    page.set_rack_session(user_id: @admin.id)
-    visit '/videos/new'
-    fill_in 'title', with: "TestTitle"
-    fill_in 'description', with: "TestDescription"
-    fill_in 'video_url', with: "https://www.youtube.com/watch?v=WwTpPd_efdM"
-
-    form = page.find("form")
-    class << form
-      def submit!
-        Capybara::RackTest::Form.new(driver, native).submit({})
-      end
-    end
-    form.submit!
-
-    v = Video.last
-    expect(v.title).to eq("TestTitle")
-    expect(v.description).to eq("TestDescription")
-    expect(v.video_url).to eq("https://www.youtube.com/watch?v=WwTpPd_efdM")
-    expect(v.pro).to eq(false)
-  end
-
-  it "should allow requests to /videos" do
-    page.set_rack_session(user_id: @admin.id)
-    visit '/videos'
-    expect(page.status_code).to eq(200)
-    expect(page).to have_current_path("/videos")
-  end
-
-  it "should have each free video listed on /videos" do
-    page.set_rack_session(user_id: @admin.id)
-    free_videos = Video.all(pro: false)
-    visit '/videos'
-    free_videos.each do |v|
-      expect(page.body).to include(v.title)
-    end
-  end
 end
