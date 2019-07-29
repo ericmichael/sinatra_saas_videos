@@ -26,35 +26,40 @@ Make an online video API where people must sign-in to view the videos on the pla
 
 
 
-## Part 0 and 1 - Model the Data Correctly
-
-For part 1 your job is to add to the Video and User classes such that they have all the properties we need.
+## Part 0 - Check if my code broke
 
 Run tests with: `bundle exec rspec spec/part0_spec.rb`
-Run tests with: `bundle exec rspec spec/part1_spec.rb`
 
-#### Video
+## Part 1 - Check if your Stripe account is configured correctly
 
-* should have property **id**
+* Get a Stripe account and find your TEST API KEYS.
 
-* should have property **title**, for ex: Schweller Kills Guy in Tournament
+* Set your STRIPE_PUBLISHABLE_KEY environment variable.
 
-* should have property **description**, for ex: Guy didn't stand a chance
+* Set your STRIPE_SECRET_KEY environment variable.
 
-* should have property **video_url**, for ex: https://www.youtube.com/watch?v=e7-v0wymn-g
+### Setting Environment Variables
 
-* should have *boolean* property **pro** which defaults to *false*, signifies whether a video is a *pro* video or not
+#### Windows Users:
 
-  ​
+Use the start menu to find where to Set Environment Variables for your Account.
 
-#### User
+#### Mac / Linux / Unix Users:
 
-* should have property **id**
-* should have property **email**, for ex: eric@eric.com
-* should have property **password**, for ex: eric123
-* should have property **pro**, which defaults to false, signifies whether the user has paid for upgraded privileges. for ex: *false*
-* should have an integer property **role_id**, which defaults to *0*, and signifieds whether the user is a free user, pro user, or admin.
+Edit your ~/.bash_profile and use the following example for what to add:
+* `export STRIPE_PUBLISHABLE_KEY=whateverisinyourstripeaccount`
+* `export STRIPE_SECRET_KEY=yourstripesecretkey`
+* DUHHH OBVIOUSLY REPLACE WITH REAL VALUES
 
+### Run tests
+
+* Install PhantomJS via instructions here: https://github.com/teampoltergeist/poltergeist
+
+* You need PhantomJS for the poltergeist gem (to properly test Stripe)
+
+* Run: `bundle exec rspec spec/part1_spec.rb`
+
+* Note: These tests take about 1 minute to run
 
 ## Part 2 - Check your own account
 
@@ -77,29 +82,6 @@ Make sure paid customers can see FREE and PRO videos.
 
 Run tests with: `bundle exec rspec spec/part4_spec.rb`
 
-## Part 5, 6, 7 - Done for you! Yayyy!
-
-Parts 5, 6, and 7 check the web UI functionality and makes sure it is running correctly.
-
-Run tests with: `bundle exec rspec spec/part5_spec.rb`
-Run tests with: `bundle exec rspec spec/part6_spec.rb`
-Run tests with: `bundle exec rspec spec/part7_spec.rb`
-
-
-
-#### Running Part 7 tests:
-
-* Install PhantomJS via instructions here: https://github.com/teampoltergeist/poltergeist
-
-* You need PhantomJS for the poltergeist gem (to properly test Stripe)
-
-* Run: `bundle exec rspec spec/part7_spec.rb`
-
-* Note: These tests take about 1 minute to run
-
-  ​
-
-
 
 ## Submitting
 
@@ -112,7 +94,10 @@ Do the normal thing, add all your changes, commit, and push.
 1. Do these ONCE only per project
    1. Create a Heroku server: `heroku create`
    2. Create a database for your server: `heroku addons:create heroku-postgresql:hobby-dev`
-2. Add all your changes on git and commit those changes
-3. Push the code to Heroku: `git push heroku master`
-4. I preconfigured the necessary files for this to work.
-5. Verify all is working and submit your links (github and heroku) to me.
+2. Set your Stripe Environment Variables on Heroku
+   1. `heroku config:set STRIPE_PUBLISHABLE_KEY=whatever`
+   2. `heroku config:set STRIPE_SECRET_KEY=whatever`
+3. Add all your changes on git and commit those changes
+4. Push the code to Heroku: `git push heroku master`
+5. I preconfigured the necessary files for this to work.
+6. Verify all is working and submit your links (github and heroku) to me.
